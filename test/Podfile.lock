@@ -1,0 +1,38 @@
+PODS:
+  - JSONModel (1.7.0)
+  - JSPatch (1.1.3):
+    - JSPatch/Core (= 1.1.3)
+  - JSPatch/Core (1.1.3)
+  - Masonry (1.1.0)
+  - WechatOpenSDK (1.8.6)
+  - ZXCategories (0.3.6):
+    - ZXCategories/Foundation (= 0.3.6)
+    - ZXCategories/UIKit (= 0.3.6)
+  - ZXCategories/Foundation (0.3.6)
+  - ZXCategories/UIKit (0.3.6)
+
+DEPENDENCIES:
+  - JSONModel (~> 1.7.0)
+  - JSPatch
+  - Masonry
+  - WechatOpenSDK (~> 1.8.5)
+  - ZXCategories
+
+SPEC REPOS:
+  trunk:
+    - JSONModel
+    - JSPatch
+    - Masonry
+    - WechatOpenSDK
+    - ZXCategories
+
+SPEC CHECKSUMS:
+  JSONModel: 840bc0fcffb24b8454d2c026bf26fea454b8e98d
+  JSPatch: 02cfed591cb907bbfe80a346666e5a35fc2d349d
+  Masonry: 678fab65091a9290e40e2832a55e7ab731aad201
+  WechatOpenSDK: 368ae03b72ee3ea1328c4f11326fbb5d2721d118
+  ZXCategories: 32406b3d0b378d2be7b35d4a0fa1c9bcb0ad25e2
+
+PODFILE CHECKSUM: 3f2920d3b89d3074fd77868b6774ff8fdbacb401
+
+COCOAPODS: 1.8.4
