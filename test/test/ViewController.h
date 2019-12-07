@@ -9,7 +9,7 @@
 #import <UIKit/UIKit.h>
 
 @interface ViewController : UIViewController
-
-
+- (void)eat:(void(^) (void) )block;
+-(void(^)(int))run;
 @end
 
