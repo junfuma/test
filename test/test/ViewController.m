@@ -35,12 +35,24 @@
 #define SCREEN_HEIGHT [UIScreen mainScreen].bounds.size.height
 
 
-@interface ViewController ()<UITextViewDelegate>{
+typedef void (^taskBlock) (void);
+
+
+ 
+
+@interface ViewController ()<UITextViewDelegate,UITableViewDelegate,UITableViewDataSource>{
     UITextView * _textView ;
+    CGFloat  ImageWidth;
+    CGFloat  ImageHeight;
 }
 @property (nonatomic ,strong)UIView     *testView;
 @property(nonatomic, strong)UIButton *button;
-@property(nonatomic, strong)  UILabel *inputTextView;
+@property(nonatomic, strong)  UITextView *inputTextView;
+@property(nonatomic, strong)NSMutableArray *taskArr;
+//最大任务数     任务数据只保留最后停留在页面的任务
+@property (nonatomic, assign) NSInteger maxTasksNumber;
+@property(nonatomic, strong)NSMutableArray *dataList;
+@property(nonatomic, strong)UITableView *msgTableView;
 @end
 
 @implementation ViewController
@@ -48,48 +60,36 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     // Do any additional setup after loading the view.
-    [self eat:^{
-//        NSLog(@"----------");
-    }];
+//    [self eat:^{
+////        NSLog(@"----------");
+//    }];
+    ImageWidth = ImageHeight=  [UIScreen mainScreen].bounds.size.width/3;
+
 //    self.run(1);
     self.view.backgroundColor = [UIColor whiteColor];
 //        [self.view addSubview:self.button];
     
-    self.inputTextView = [[UILabel alloc] init];
+    
+    [self addObserver];
+    [self.view addSubview:self.msgTableView];
+    /*
+    self.inputTextView = [[UITextView alloc] init];
     self.inputTextView.backgroundColor = UIColor.redColor;
     [self.view addSubview:self.inputTextView];
-    [self.inputView mas_makeConstraints:^(MASConstraintMaker *make) {
+    [self.inputTextView mas_makeConstraints:^(MASConstraintMaker *make) {
         make.top.left.mas_equalTo(100);
         make.size.mas_equalTo(CGSizeMake(100, 100));
     }];
     [self.inputTextView layoutIfNeeded];
-    if (@available(iOS 11.0, *)) {
-             self.inputTextView.layer.cornerRadius = 6;
-             self.inputTextView.layer.maskedCorners = kCALayerMinXMinYCorner | kCALayerMaxXMinYCorner; // 左上圆角
-         }else {
-             CGFloat radius = 6; // 圆角大小
-             UIRectCorner corner = UIRectCornerTopLeft | UIRectCornerTopRight;
-             UIBezierPath * path = [UIBezierPath bezierPathWithRoundedRect:self.inputView.bounds byRoundingCorners:corner cornerRadii:CGSizeMake(radius, radius)];
-             CAShapeLayer *maskLayer = [[CAShapeLayer alloc] init];
-             maskLayer.frame = self.inputView.bounds;
-             maskLayer.path = path.CGPath;
-             self.inputTextView.layer.mask = maskLayer;
-         }
-    
-    
-            self.inputTextView.layer.shadowColor = [UIColor grayColor].CGColor;
-      //        self.layer.shadowOffset = CGSizeMake(3, 3);//有偏移量的情况,默认向右向下有阴影
-              self.inputTextView.layer.shadowOffset = CGSizeZero; //设置偏移量为0,四周都有阴影
-              self.inputTextView.layer.shadowRadius = 3.0f;//阴影半径，默认3
-              self.inputTextView.layer.shadowOpacity = 0.8f;//阴影透明度，默认0
-              self.inputTextView.layer.masksToBounds = NO;
-              self.inputTextView.layer.shadowPath = [UIBezierPath bezierPathWithRoundedRect:self.inputView.bounds cornerRadius:self.inputTextView.layer.cornerRadius].CGPath;
 
 
-//     [[RACSignal merge:@[self.inputTextView.rac_textSignal, RACObserve(self.inputTextView, text)]] subscribeNext:^(NSString* text) { // do something here
-//
-//     }];
+
+     [[RACSignal merge:@[self.inputTextView.rac_textSignal, RACObserve(self.inputTextView, text)]] subscribeNext:^(NSString* text) { // do something here
+         NSLog(@"----%@",text);
+     }];
+    */
     
+//    [self gcdDemo8];
     /*
     [Person run];
     [Person eat];
@@ -157,6 +157,12 @@
     [self.view addSubview:label];
 */
 
+        //给runloop一个事件源，让Runloop不断的运行执行代码块任务。
+        [NSTimer scheduledTimerWithTimeInterval:0.1 target:self selector:@selector(runloopalive) userInfo:nil repeats:YES];
+}
+//如果方法里什么都不干，APP性能影响并不大。但cpu增加负担，
+-(void)runloopalive{
+   //什么都不干
 }
 -(UIButton *)button{
     if (!_button) {
@@ -296,6 +302,66 @@
 - (void)actionTouched{
     AudioServicesPlayAlertSound(kSystemSoundID_Vibrate);//默认震动效果
 }
+#pragma mark- 队列函数
+- (void)gcdDemo1{
+//    同步队列
+    dispatch_queue_t queue = dispatch_queue_create("alex", DISPATCH_QUEUE_SERIAL);
+    NSLog(@"1");
+//    异步函数
+    dispatch_async(queue, ^{
+        NSLog(@"2");
+        dispatch_sync(queue, ^{
+             NSLog(@"3");
+        });
+        NSLog(@"4");
+    });
+    NSLog(@"5");
+
+    /**
+     1 5 2 奔溃 奔溃在289行crash
+    同步任务会阻塞当前线程，然后把 Block 中的任务放到指定的队列中执行，只有等到 Block 中的任务完成后才会让当前线程继续往下运行。
+     因为异步函数 所以234 都会执行  但是同步任务导致4任务必须等三任务完成才可以执行 但是3任务会橘色当前线程到289行 4任务无法执行不许等到3任务完成才可以  所以死锁
+     */
+}
+#pragma mark- a函数与队列关系
+- (void)gcdDemo2{
+    
+    /**  任务 队列 函数 */
+    dispatch_block_t block = ^{
+        NSLog(@"Hellow World");
+    };
+    dispatch_queue_t queue = dispatch_queue_create("alex", NULL);
+    dispatch_async(queue, block);
+    
+}
+- (void)gcdDemo3{
+    //并发队列
+    dispatch_queue_t queue = dispatch_queue_create("alex", DISPATCH_QUEUE_CONCURRENT);
+
+    dispatch_async(queue, ^{
+        NSLog(@"1");
+    });
+    dispatch_async(queue, ^{
+        NSLog(@"2");
+    });
+    dispatch_sync(queue, ^{
+        NSLog(@"3");
+    });
+    NSLog(@"0");
+    dispatch_async(queue, ^{
+        NSLog(@"4");
+    });
+    dispatch_async(queue, ^{
+        NSLog(@"5");
+    });
+    dispatch_async(queue, ^{
+        NSLog(@"6");
+    });
+    
+    /**
+     123 是随机的  但是0肯定在第四位
+     */
+}
 - (void)gcdDemo4{
     dispatch_queue_t q = dispatch_get_global_queue(0,0);
     
@@ -362,4 +428,214 @@
     dispatch_async(q,task);
     NSLog(@"come here");
 }
+-(void)gcdDemo7{
+        dispatch_queue_t queue = dispatch_queue_create("cc_queue",DISPATCH_QUEUE_CONCURRENT);
+
+        dispatch_async(queue, ^{ // 􏴄􏲭􏱇􏱈1
+        for (int i = 0; i < 2; ++i) {
+        [NSThread sleepForTimeInterval:2]; NSLog(@"1---%@",[NSThread currentThread]);
+        }
+            
+        });
+    /*
+        dispatch_barrier_async(queue, ^{
+            NSLog(@"---");
+        });
+     
+    */
+    /**
+     提交一个栅栏函数在执行中,它会等待栅栏函数执行完再去执行下一行代码（注意是下一行代码），同步栅栏函数是在主线程中执行的
+     dispatch_barrier_sync(dispatch_queue_t queue, dispatch_block_t blcok);
+
+     提交一个栅栏函数在异步执行中,它会立马返回开始执行下一行代码（不用等待任务执行完毕）
+     dispatch_barrier_async(dispatch_queue_t queue, dispatch_block_t blcok);
+
+     */
+        dispatch_barrier_async(queue, ^{
+            for (int i = 0; i < 2; ++i) {
+              [NSThread sleepForTimeInterval:2]; NSLog(@"000---%@",[NSThread currentThread]);
+              }
+          });
+       
+        dispatch_async(queue, ^{ // 􏴄􏲭􏱇􏱈1
+        for (int i = 0; i < 2; ++i) {
+        [NSThread sleepForTimeInterval:2]; NSLog(@"2---%@",[NSThread currentThread]);
+        } });
+    /**
+    //共同点
+     1、都会等待在它前面插入队列的任务（1、2、3）先执行完
+     2、都会等待他们自己的任务（barrier）执行完再执行后面的任务（4、5、6）（注意这里说的是任务不是下一行代码）
+
+    //不同点 1、dispatch_barrier_sync需要等待自己的任务（barrier）结束之后，才会继续添加并执行写在barrier后面的任务（4、5、6），然后执行后面的任务
+     2、dispatch_barrier_async将自己的任务（barrier）插入到queue之后，不会等待自己的任务结束，它会继续把后面的任务（4、5、6）插入到queue，然后执行任务。
+
+     
+     
+     
+     */
+    /**
+     􏱹􏰨􏳓􏲓􏰍􏰂􏱟dispatch_after􏳿􏳺􏱆􏱽􏰂􏰼􏲯􏲰􏳈􏴻􏲊􏲵􏳊􏰘􏳯􏱄􏱅􏰲􏰳􏱐􏳋􏰂􏰼􏲯􏲰􏳈􏴻􏲊 􏲵􏴃􏱇􏱈􏴄􏲭􏲮􏰧􏲏􏲐􏱋􏰥􏵶􏴮􏰈􏲘􏱐􏲄􏰛􏳈􏴻􏱆􏱽􏰂􏵷􏰸􏵸􏵹􏰍􏱐􏳕􏱼􏰨􏵋􏵺􏵻􏵼􏱄􏱅􏱇􏱈􏱐
+     dispatch_after添加在某个队列中延迟执行block中的任务，是要等待该队列中的任务执行完才会执行block，也就是如果线程阻塞，延迟执行的时间就不确定了，可能并不是你设置的时长。
+     
+     一般延迟函数放在子线程中执行  因为主线程中一般会有一些耗时的操作
+     */
+
+}
+-(void)gcdDemo8{
+    /*
+    NSArray *titleArr = @[@"1",@"2",@"3",@"4",@"5",@"6"];
+    dispatch_queue_t qeue =  dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT  , 0);
+    dispatch_apply(titleArr.count, qeue, ^(size_t index) {
+        UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake(100, 200 + index*30, 100, 20)];
+             label.backgroundColor = [UIColor whiteColor];
+             label.text = titleArr[index];
+             label.font = [UIFont systemFontOfSize:18];
+             [self.view addSubview:label];
+    });
+    */
+    dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
+    NSLog(@"apply---begin");
+    dispatch_apply(6, queue, ^(size_t index) {
+    NSLog(@"%zd---%@",index, [NSThread currentThread]); });
+    NSLog(@"apply---end");
+}
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView{
+    return 1;
+}
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
+{
+    return 999;
+}
+
+-(CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath{
+    return ImageHeight+20;
+}
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    static NSString *CellTableIndentifier = @"CellTableIdentifier";
+    UITableViewCell  *  cell;
+    if (!cell) {
+        cell   =  [[UITableViewCell  alloc]initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:CellTableIndentifier];
+    }else{
+        cell   =  [tableView dequeueReusableCellWithIdentifier:CellTableIndentifier forIndexPath:indexPath];
+    }
+    @weakify(self);
+    
+    [self addTask:^{
+        @strongify(self);
+        [self addImage1ToCell:cell];
+    }];
+    
+    [self addTask:^{
+            @strongify(self);
+        [self addImage2ToCell:cell];
+    }];
+    
+    [self addTask:^{
+            @strongify(self);
+        [self addImage3ToCell:cell];
+    }];
+    
+    return cell;
+}
+-(void)addImage1ToCell:(UITableViewCell*)cell{
+    UIImageView* cellImageView = [[UIImageView alloc]initWithFrame:CGRectMake(0, 5, ImageWidth, ImageHeight)];
+    cellImageView.image = [UIImage imageNamed:@"timg-6.jpeg"];
+    /*
+    //开始对imageView进行画图
+    UIGraphicsBeginImageContextWithOptions(cellImageView.bounds.size, NO, 0.0);
+    
+    //使用贝塞尔曲线画出一个圆形图
+    [[UIBezierPath bezierPathWithRoundedRect:cellImageView.bounds cornerRadius:cellImageView.frame.size.width] addClip];
+    
+    [cellImageView drawRect:cellImageView.bounds];
+    
+    cellImageView.image = UIGraphicsGetImageFromCurrentImageContext();
+    */
+    UIBezierPath *maskPath = [UIBezierPath bezierPathWithRoundedRect:cellImageView.bounds byRoundingCorners:UIRectCornerAllCorners cornerRadii:cellImageView.bounds.size];
+    
+    CAShapeLayer *maskLayer = [[CAShapeLayer alloc]init];
+    //设置大小
+    maskLayer.frame = cellImageView.bounds;
+    //设置图形样子
+    maskLayer.path = maskPath.CGPath;
+    
+    cellImageView.layer.mask = maskLayer;
+    [cell.contentView addSubview:cellImageView];
+}
+
+-(void)addImage2ToCell:(UITableViewCell*)cell{
+    UIImageView* cellImageView = [[UIImageView alloc]initWithFrame:CGRectMake(1*(ImageWidth+5), 5, ImageWidth, ImageHeight)];
+    cellImageView.image = [UIImage imageNamed:@"timg-7.jpeg"];
+    [cell.contentView addSubview:cellImageView];
+}
+
+
+-(void)addImage3ToCell:(UITableViewCell*)cell{
+    UIImageView* cellImageView = [[UIImageView alloc]initWithFrame:CGRectMake(2*(ImageWidth+5), 5, ImageWidth, ImageHeight)];
+    cellImageView.image = [UIImage imageNamed:@"2012081210372.jpg"];
+    [cell.contentView addSubview:cellImageView];
+}
+
+- (void)addObserver{
+        __weak typeof(self) weakSelf = self;
+
+    CFRunLoopObserverRef observer = CFRunLoopObserverCreateWithHandler(CFAllocatorGetDefault(), kCFRunLoopAfterWaiting, YES, 0, ^(CFRunLoopObserverRef observer, CFRunLoopActivity activity) {
+//        kCFRunLoopAfterWaiting
+        if (weakSelf.taskArr.count == 0) {
+                   return;
+               }
+        taskBlock block = self.taskArr.firstObject;
+        block();
+        [weakSelf.taskArr removeObjectAtIndex:0];
+        NSLog(@"----");
+    });
+    CFRunLoopAddObserver(CFRunLoopGetCurrent(), observer, kCFRunLoopCommonModes);
+       CFRelease(observer);
+}
+
+- (void)addTask:(taskBlock)block{
+    [self.taskArr addObject:block];
+    //超过每次最多执行的任务数就移出当前数组
+    if (self.taskArr.count > self.maxTasksNumber) {
+        
+        [self.taskArr removeObjectAtIndex:0];
+    }
+}
+- (NSMutableArray *)taskArr
+{
+    if (!_taskArr) {
+        _taskArr = [NSMutableArray array];
+    }
+     self.maxTasksNumber  =  20;
+    return _taskArr ;
+}
+-(UITableView *)msgTableView
+{
+    if (!_msgTableView) {
+        _msgTableView = [[UITableView alloc]initWithFrame:self.view.bounds style:UITableViewStylePlain];
+        _msgTableView.delegate = self;
+        _msgTableView.dataSource = self;
+        _msgTableView.estimatedRowHeight = 500;
+        _msgTableView.sectionHeaderHeight = 0.001;
+        _msgTableView.sectionFooterHeight = 0.001;
+        _msgTableView.backgroundColor = UIColor.redColor;
+        _msgTableView.separatorStyle = UITableViewCellSelectionStyleNone;
+
+    }
+    return _msgTableView;
+}
+- (NSMutableArray *)dataList
+{
+    if (!_dataList) {
+     
+            _dataList = [NSMutableArray array];
+        
+    }
+    return _dataList ;
+    
+}
+
+
+     
 @end
