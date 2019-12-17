@@ -53,6 +53,15 @@ typedef void (^taskBlock) (void);
 @property (nonatomic, assign) NSInteger maxTasksNumber;
 @property(nonatomic, strong)NSMutableArray *dataList;
 @property(nonatomic, strong)UITableView *msgTableView;
+
+
+@property(nonatomic, strong)NSString *strongStr ;
+@property(nonatomic, copy)NSString *ccopyStr ;
+
+@property(nonatomic, strong)UIImage *img1;
+@property(nonatomic, strong)UIImage *img2;
+@property(nonatomic, strong)UIImageView *longmage;
+
 @end
 
 @implementation ViewController
@@ -60,6 +69,15 @@ typedef void (^taskBlock) (void);
 - (void)viewDidLoad {
     [super viewDidLoad];
     // Do any additional setup after loading the view.
+    NSString *a = @"111";
+    self.strongStr = a;
+     self.ccopyStr = self.strongStr;
+    NSLog(@"--%@----%@---%@",a,self.strongStr,self.ccopyStr);
+    a = @"222";
+    NSLog(@"--%@----%@---%@",a,self.strongStr,self.ccopyStr);
+    self.strongStr = @"333";
+    NSLog(@"--%@----%@---%@",a,self.strongStr,self.ccopyStr);
+
 //    [self eat:^{
 ////        NSLog(@"----------");
 //    }];
@@ -70,8 +88,9 @@ typedef void (^taskBlock) (void);
 //        [self.view addSubview:self.button];
     
     
-    [self addObserver];
-    [self.view addSubview:self.msgTableView];
+//    [self addObserver];
+//    [self.view addSubview:self.msgTableView];
+
     /*
     self.inputTextView = [[UITextView alloc] init];
     self.inputTextView.backgroundColor = UIColor.redColor;
@@ -159,10 +178,54 @@ typedef void (^taskBlock) (void);
 
         //给runloop一个事件源，让Runloop不断的运行执行代码块任务。
         [NSTimer scheduledTimerWithTimeInterval:0.1 target:self selector:@selector(runloopalive) userInfo:nil repeats:YES];
+    
+   self.longmage = [[UIImageView alloc] initWithFrame:CGRectMake(100, 100, 200, 200)];
+    self.longmage.backgroundColor = [UIColor redColor];
+    [self.view addSubview:self.longmage];
+    [self addlongImage];
 }
 //如果方法里什么都不干，APP性能影响并不大。但cpu增加负担，
 -(void)runloopalive{
    //什么都不干
+//    NSLog(@"========");
+}
+//长图绘制
+- (void)addlongImage{
+    dispatch_queue_t queue = dispatch_get_global_queue(0, 0 );
+    dispatch_group_t group = dispatch_group_create();
+    dispatch_group_async(group, queue, ^{
+        NSURL*url = [NSURL URLWithString:@"http://e.hiphotos.baidu.com/image/pic/item/4610b912c8fcc3cef70d70409845d688d53f20f7.jpg"];
+        NSData *data = [NSData dataWithContentsOfURL:url];
+        self.img1 = [UIImage imageNamed:@"timg.jpg"];
+        NSLog(@"1-----%@",self.img1);
+
+    });
+    dispatch_group_async(group, queue, ^{
+        NSURL*url = [NSURL URLWithString:@"https://pics2.baidu.com/feed/7a899e510fb30f2499e7d946ef5f3446ac4b0341.jpeg?token=b8fd169672128460f14ca2ccc0a847b0&s=876068A44C73BFC41A2C4C9B0300E083"];
+        NSData *data = [NSData dataWithContentsOfURL:url];
+//        self.img2 = [UIImage imageNamed:@"2012081210372.jpg"];
+        self.img2 = [UIImage imageWithData:data];
+   NSLog(@"2-----%@",self.img2);
+
+    });
+    dispatch_group_notify(group, queue, ^{
+         UIGraphicsBeginImageContext(CGSizeMake(200, 200));
+        [self.img1 drawInRect:CGRectMake(0, 0, 200, 100)];
+        self.img1 = nil;
+        [self.img2 drawInRect:CGRectMake(0, 100, 200, 100)];
+        self.img2 = nil;
+        UIImage *img = UIGraphicsGetImageFromCurrentImageContext();
+        UIGraphicsEndImageContext();
+        dispatch_async(dispatch_get_main_queue(), ^{
+            self.longmage.image = img;
+        
+
+        });
+    });
+}
+- (void)image:(UIImage *)image didFinishSavingWithError:(NSError *)error contextInfo:(void *)contextInfo
+{
+    NSLog(@"image = %@, error = %@, contextInfo = %@", image, error, contextInfo);
 }
 -(UIButton *)button{
     if (!_button) {
@@ -588,7 +651,7 @@ typedef void (^taskBlock) (void);
         taskBlock block = self.taskArr.firstObject;
         block();
         [weakSelf.taskArr removeObjectAtIndex:0];
-        NSLog(@"----");
+        NSLog(@"加载...");
     });
     CFRunLoopAddObserver(CFRunLoopGetCurrent(), observer, kCFRunLoopCommonModes);
        CFRelease(observer);
