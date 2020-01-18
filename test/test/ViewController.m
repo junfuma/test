@@ -65,19 +65,21 @@ typedef void (^taskBlock) (void);
 @end
 
 @implementation ViewController
-
+- (void)viewWillAppear:(BOOL)animated{
+    [super viewWillAppear:animated];
+    NSLog(@"-------------");
+}
+- (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event
+{
+         NSArray *arr = @[@"3",@"2"];
+          NSLog(@"%@",arr[4]);
+}
 - (void)viewDidLoad {
     [super viewDidLoad];
     // Do any additional setup after loading the view.
-    NSString *a = @"111";
-    self.strongStr = a;
-     self.ccopyStr = self.strongStr;
-    NSLog(@"--%@----%@---%@",a,self.strongStr,self.ccopyStr);
-    a = @"222";
-    NSLog(@"--%@----%@---%@",a,self.strongStr,self.ccopyStr);
-    self.strongStr = @"333";
-    NSLog(@"--%@----%@---%@",a,self.strongStr,self.ccopyStr);
-
+  
+//    NSLog(@"%@",arr);
+    
 //    [self eat:^{
 ////        NSLog(@"----------");
 //    }];
@@ -86,7 +88,31 @@ typedef void (^taskBlock) (void);
 //    self.run(1);
     self.view.backgroundColor = [UIColor whiteColor];
 //        [self.view addSubview:self.button];
+    UIView *view = [[UIView alloc] initWithFrame:CGRectMake(100, 100, 100, 100)];
+    view.backgroundColor = UIColor.redColor;
+    view.clipsToBounds = YES;
+
+//    [self.view addSubview:view];
+    if (@available(iOS 11.0, *)) {
+        view.layer.cornerRadius = 10;
+        view.layer.maskedCorners = kCALayerMinXMinYCorner | kCALayerMaxXMinYCorner; // 左上圆角
+    }else {
+        CGFloat radius = 10; // 圆角大小
+        UIRectCorner corner = UIRectCornerTopLeft | UIRectCornerTopRight; // 圆角位置，全部位置
+        UIBezierPath * path = [UIBezierPath bezierPathWithRoundedRect:view.bounds byRoundingCorners:corner cornerRadii:CGSizeMake(radius, radius)];
+        CAShapeLayer *maskLayer = [[CAShapeLayer alloc] init];
+        maskLayer.frame = view.bounds;
+        maskLayer.path = path.CGPath;
+        view.layer.mask = maskLayer;
+    }
     
+    UIButton *btn = [UIButton buttonWithType:UIButtonTypeSystem];
+    [btn setTitle:@"sasasa" forState:UIControlStateNormal];
+    [btn setTitleColor:UIColor.blackColor forState:UIControlStateNormal];
+    btn.titleLabel.font = [UIFont systemFontOfSize:18];
+    btn.frame = CGRectMake(100, 100, 100, 100);
+    [btn addTarget:self action:@selector(clickedasda) forControlEvents:UIControlEventTouchUpInside];
+    [self.view addSubview:btn];
     
 //    [self addObserver];
 //    [self.view addSubview:self.msgTableView];
@@ -144,8 +170,7 @@ typedef void (^taskBlock) (void);
         const char *name = ivar_getName(ivar);
         const char *type = ivar_getTypeEncoding(ivar);
         NSLog(@"成员变量名：%s 成员变量类型：%s",name,type);
-    
-    }
+        }
     // 注意释放内存！
     free(ivars);
     
@@ -177,13 +202,14 @@ typedef void (^taskBlock) (void);
 */
 
         //给runloop一个事件源，让Runloop不断的运行执行代码块任务。
-        [NSTimer scheduledTimerWithTimeInterval:0.1 target:self selector:@selector(runloopalive) userInfo:nil repeats:YES];
-    
-   self.longmage = [[UIImageView alloc] initWithFrame:CGRectMake(100, 100, 200, 200)];
-    self.longmage.backgroundColor = [UIColor redColor];
-    [self.view addSubview:self.longmage];
-    [self addlongImage];
+//        [NSTimer scheduledTimerWithTimeInterval:0.1 target:self selector:@selector(runloopalive) userInfo:nil repeats:YES];
+//
+//   self.longmage = [[UIImageView alloc] initWithFrame:CGRectMake(100, 100, 200, 200)];
+//    self.longmage.backgroundColor = [UIColor redColor];
+//    [self.view addSubview:self.longmage];
+//    [self addlongImage];
 }
+
 //如果方法里什么都不干，APP性能影响并不大。但cpu增加负担，
 -(void)runloopalive{
    //什么都不干
@@ -205,7 +231,7 @@ typedef void (^taskBlock) (void);
         NSData *data = [NSData dataWithContentsOfURL:url];
 //        self.img2 = [UIImage imageNamed:@"2012081210372.jpg"];
         self.img2 = [UIImage imageWithData:data];
-   NSLog(@"2-----%@",self.img2);
+  // NSLog(@"2-----%@",self.img2);
 
     });
     dispatch_group_notify(group, queue, ^{
@@ -287,10 +313,11 @@ typedef void (^taskBlock) (void);
     NSLog(@"------------------------------");
 }
 - (void)clickedasda{
-  aaaaViewController *vc  =[[aaaaViewController alloc] init];
-    [vc setModalPresentationStyle:UIModalPresentationFullScreen];
-    [self presentViewController:vc  animated:YES completion:nil];//从当前界面到nextVC
-    
+//  aaaaViewController *vc  =[[aaaaViewController alloc] init];
+//    [vc setModalPresentationStyle:UIModalPresentationFullScreen];
+//    [self presentViewController:vc  animated:YES completion:nil];//从当前界面到nextVC
+    NSArray *arr = @[@"3",@"2"];
+             NSLog(@"%@",arr[4]);
 }
 
 -(void)dealloc
@@ -358,10 +385,10 @@ typedef void (^taskBlock) (void);
     [self.testView.layer addAnimation:animation forKey:@"shakeAnimation"];
     */
 }
-- (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event
-{
-//   AudioServicesPlayAlertSound(kSystemSoundID_Vibrate);//默认震动效果
-}
+//- (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event
+//{
+////   AudioServicesPlayAlertSound(kSystemSoundID_Vibrate);//默认震动效果
+//}
 - (void)actionTouched{
     AudioServicesPlayAlertSound(kSystemSoundID_Vibrate);//默认震动效果
 }

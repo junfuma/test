@@ -10,7 +10,7 @@
 #import "ViewController.h"
 #import "JPEngine.h"
 #import "aaaaViewController.h"
-
+#import "SPUncaughtExceptionHandler.h"
 @interface AppDelegate ()
 
 @end
@@ -21,7 +21,7 @@
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     // Override point for customization after application launch.
     
-    
+      [UncaughtExceptionManager setDefaultHandler];
     
     self.window = [[UIWindow alloc]initWithFrame:[UIScreen mainScreen].bounds];
     UIViewController* main = [[ViewController alloc]init];
